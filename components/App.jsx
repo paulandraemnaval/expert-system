@@ -5,12 +5,16 @@ import GoalPicker from "./GoalPicker";
 import FactPicker from "./FactPicker";
 import Database from "./Database";
 import { toast } from "react-hot-toast";
+import { Rule } from "postcss";
 const App = () => {
   const [selectedFacts, setSelectedFacts] = React.useState([]);
   const [selectedGoal, setSelectedGoal] = React.useState("");
   const [databaseContent, setDatabaseContent] = React.useState([]);
   const [infferedFacts, setInfferedFacts] = React.useState([]);
   const [forwardChaining, setForwardChaining] = React.useState(false);
+  const [currentlyInfferingRule, setCurrentlyInfferingRule] =
+    React.useState("");
+  const [showRules, setShowRules] = React.useState(false);
 
   React.useEffect(() => {
     setDatabaseContent(selectedFacts);
@@ -20,6 +24,12 @@ const App = () => {
       databaseContent.filter((fact) => !selectedFacts.includes(fact))
     );
   }, [databaseContent]);
+
+  const clearDatabase = () => {
+    setDatabaseContent([]);
+    setInfferedFacts([]);
+    setSelectedFacts([]);
+  };
 
   const handleFactClick = (fact) => {
     setSelectedFacts((prev) => {
@@ -37,16 +47,16 @@ const App = () => {
     });
   };
 
-  const forwardChain = () => {
+  const forwardChain = async () => {
     let newRuleFired = true;
     let firedRules = [];
     let updatedDatabaseContent = [...databaseContent];
 
-    while (newRuleFired) {
+    while (newRuleFired && !updatedDatabaseContent.includes(selectedGoal)) {
       newRuleFired = false;
-      rules.forEach((rule) => {
-        const [conditionPart, result] = rule.split("THEN");
 
+      for (const rule of rules) {
+        const [conditionPart, result] = rule.split("THEN");
         if (
           conditionPart.includes(" AND ") &&
           !firedRules.includes(rule.trim()) &&
@@ -58,7 +68,8 @@ const App = () => {
             .split(" AND ")
             .map((condition) => condition.trim());
           let allConditionsTrue = true;
-          conditions.map((condition) => {
+
+          conditions.forEach((condition) => {
             if (condition.startsWith("not")) {
               if (
                 updatedDatabaseContent.includes(
@@ -71,13 +82,18 @@ const App = () => {
               allConditionsTrue = false;
             }
           });
+
           if (allConditionsTrue && !updatedDatabaseContent.includes(result)) {
             firedRules.push(rule.trim());
             updatedDatabaseContent.push(result.trim());
             newRuleFired = true;
+
+            if (updatedDatabaseContent.includes(selectedGoal)) {
+              break;
+            }
           }
         } else {
-          updatedDatabaseContent.forEach((fact) => {
+          for (const fact of updatedDatabaseContent) {
             if (
               rule.split("IF")[1].split("THEN")[0].trim() === fact.trim() &&
               !firedRules.includes(rule.trim()) &&
@@ -86,10 +102,14 @@ const App = () => {
               firedRules.push(rule.trim());
               updatedDatabaseContent.push(result.trim());
               newRuleFired = true;
+
+              if (updatedDatabaseContent.includes(selectedGoal)) {
+                break;
+              }
             }
-          });
+          }
         }
-      });
+      }
     }
 
     setDatabaseContent(updatedDatabaseContent);
@@ -98,7 +118,9 @@ const App = () => {
     );
     setInfferedFacts(infferedFacts);
     console.log("infferedFacts", infferedFacts);
+    setCurrentlyInfferingRule("");
   };
+
   const backwardChain = (
     parentGoal,
     ruleOfGoal,
@@ -273,6 +295,8 @@ const App = () => {
     "IF light nasal breathing THEN nasal discharge",
     "IF heavy nasal breathing THEN sinus membranes swelling",
     "IF low fever AND headache AND nasal discharge AND cough THEN cold",
+    "IF high fever AND headache AND nasal discharge AND cough THEN cold",
+
     "IF cold AND sore throat THEN treat",
     "IF cold AND not sore throat THEN don't treat",
     "IF treat THEN give medication",
@@ -301,6 +325,7 @@ const App = () => {
           facts={facts}
           selectedFacts={selectedFacts}
           handleFactClick={handleFactClick}
+          setShowRules={setShowRules}
         />
         <GoalPicker
           goals={goals}
@@ -308,19 +333,29 @@ const App = () => {
           selectedGoal={selectedGoal}
         />
       </div>
-
-      <div className="flex flex-col flex-1 h-full">
-        <Rules rules={rules} />
-      </div>
+      {showRules && (
+        <Rules rules={rules} currentlyInferringRule={currentlyInfferingRule} />
+      )}
 
       <div className="flex flex-1 flex-col gap-2 h-full">
         <div className="flex flex-col flex-1">
-          <h1 className="text-lg font-bold font-inter">Database</h1>
+          <div className="flex mb-2">
+            <span className="text-lg font-bold font-inter text-bottom mr-2">
+              Database
+            </span>
+            <button
+              className="bg-blue-400 rounded-lg px-4 text-white font-bold"
+              onClick={clearDatabase}
+            >
+              Clear database
+            </button>
+          </div>
           <Database
             databaseContent={databaseContent}
             inferredFacts={infferedFacts}
           />
         </div>
+
         <h1 className=" font-inter font-bold ">Inference</h1>
 
         <div className="items-center flex gap-2">
