@@ -23,7 +23,9 @@ const App = () => {
   }, [databaseContent]);
 
   const clearDatabase = () => {
-    setDatabaseContent([]);
+    setDatabaseContent((prev) =>
+      prev.filter((fact) => !selectedFacts.includes(fact))
+    );
     setInfferedFacts([]);
   };
 
