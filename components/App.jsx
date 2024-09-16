@@ -24,7 +24,7 @@ const App = () => {
 
   const clearDatabase = () => {
     setDatabaseContent((prev) =>
-      prev.filter((fact) => !selectedFacts.includes(fact))
+      prev.filter((fact) => selectedFacts.includes(fact))
     );
     setInfferedFacts([]);
   };
