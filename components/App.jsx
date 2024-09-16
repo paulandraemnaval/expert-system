@@ -5,7 +5,6 @@ import GoalPicker from "./GoalPicker";
 import FactPicker from "./FactPicker";
 import Database from "./Database";
 import { toast } from "react-hot-toast";
-import { Rule } from "postcss";
 const App = () => {
   const [selectedFacts, setSelectedFacts] = React.useState([]);
   const [selectedGoal, setSelectedGoal] = React.useState("");
