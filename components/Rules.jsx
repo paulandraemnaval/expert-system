@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-const Rules = ({ rules, currentlyInferringRule }) => {
+const Rules = ({ rules }) => {
   return (
     <div className="flex flex-col flex-1">
       <h1 className="text-lg font-bold font-inter mb-2">Rules</h1>
@@ -9,9 +9,7 @@ const Rules = ({ rules, currentlyInferringRule }) => {
         <ul className=" space-y-1">
           {rules.map((rule, index) => (
             <li
-              className={`min-w-4 p-2 rounded-lg border border-gray-300 ${
-                rule === currentlyInferringRule ? "bg-blue-200" : ""
-              }`}
+              className={`min-w-4 p-2 rounded-lg border border-gray-300 `}
               index={index}
               key={rule}
             >

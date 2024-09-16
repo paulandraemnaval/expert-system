@@ -4,15 +4,13 @@ import Rules from "./Rules";
 import GoalPicker from "./GoalPicker";
 import FactPicker from "./FactPicker";
 import Database from "./Database";
-import { toast } from "react-hot-toast";
+
 const App = () => {
   const [selectedFacts, setSelectedFacts] = React.useState([]);
   const [selectedGoal, setSelectedGoal] = React.useState("");
   const [databaseContent, setDatabaseContent] = React.useState([]);
   const [infferedFacts, setInfferedFacts] = React.useState([]);
   const [forwardChaining, setForwardChaining] = React.useState(false);
-  const [currentlyInfferingRule, setCurrentlyInfferingRule] =
-    React.useState("");
   const [showRules, setShowRules] = React.useState(false);
 
   React.useEffect(() => {
@@ -75,7 +73,9 @@ const App = () => {
                   condition.split("not")[1].trim()
                 )
               ) {
+                //a negated condition is present in the database, we can't reach the goal
                 allConditionsTrue = false;
+                return;
               }
             } else if (!updatedDatabaseContent.includes(condition.trim())) {
               allConditionsTrue = false;
@@ -117,16 +117,13 @@ const App = () => {
     );
     setInfferedFacts(infferedFacts);
     console.log("infferedFacts", infferedFacts);
-    setCurrentlyInfferingRule("");
   };
 
   const backwardChain = (
-    parentGoal,
-    ruleOfGoal,
+    parentGoal, //is an array of length 1 that has the maingoal
+    ruleOfGoal, //is an array of length 1 that has the goal/subgoal
     knownFacts,
-    setKnownFacts,
     rules,
-    visitedGoals = [],
     canReachGoal = true
   ) => {
     console.log("RECURSED");
@@ -135,16 +132,14 @@ const App = () => {
     console.log("knownFacts", knownFacts);
     let localKnownFacts = [...knownFacts];
 
+    // If the goal cannot be reached, end the recursion
     if (!canReachGoal) {
       console.log("CAN'T REACH GOAL. RETURNING");
       return localKnownFacts;
     }
-    // Avoid revisiting goals
-    visitedGoals = [...visitedGoals, ruleOfGoal];
-    console.log("visitedGoals", visitedGoals);
 
-    if (visitedGoals.length === 0) {
-      console.log("VISITED GOALS IS EMPTY. RETURNING");
+    if (localKnownFacts.includes(parentGoal[0].split("THEN")[1].trim())) {
+      console.log("PARENT GOAL IS NOW KNOWN. RETURNING");
       return localKnownFacts;
     }
 
@@ -154,17 +149,9 @@ const App = () => {
     let conditions = [];
 
     const infer = (rule) => {
-      //unreachable goal
-      if (!canReachGoal) {
-        console.log("CAN'T REACH GOAL. RETURNING");
-      }
-      // If the goal is already in the knownFacts, we can return
-      if (localKnownFacts.includes(parentGoal[0].split("THEN")[1].trim())) {
-        console.log("PARENT GOAL IS NOW KNOWN. RETURNING");
-        return localKnownFacts;
-      }
-      //start infference engine
       if (rule) console.log("INFER START. CHECKING RULE: ", rule);
+
+      //parsing
       conditionPartOfRuleOfGoal = rule.split("IF")[1].split("THEN")[0];
       conditions = conditionPartOfRuleOfGoal.includes("temperature")
         ? [conditionPartOfRuleOfGoal]
@@ -172,6 +159,8 @@ const App = () => {
 
       allConditionsTrue = true;
       unfulfilledConditions = [];
+
+      //after parsing the conditions check if each of them is present in the database passed as knownFacts
       conditions.forEach((condition) => {
         //checks if a condition is negated or a temperature (special) condition
         if (condition.includes("not") && !condition.includes("temperature")) {
@@ -196,26 +185,23 @@ const App = () => {
         }
       });
 
-      //idk why this works but it does
+      // If all conditions are true, we can infer the new fact
+      if (allConditionsTrue) {
+        console.log("CONDITION", conditionPartOfRuleOfGoal, "IS TRUE");
 
-      if (unfulfilledConditions)
-        if (allConditionsTrue) {
-          console.log("CONDITION", conditionPartOfRuleOfGoal, "IS TRUE");
-
-          const newFact = rule.split("THEN")[1].trim();
-          if (!localKnownFacts.includes(newFact)) {
-            localKnownFacts.push(newFact);
-          }
-          console.log(
-            "ALL CONDITIONS MET. LOCALNEWFACTS AFTER PUSH",
-            localKnownFacts
-          );
-          console.log("VISITED GOALS AFTER POP", visitedGoals);
-          return;
+        const newFact = rule.split("THEN")[1].trim();
+        if (!localKnownFacts.includes(newFact)) {
+          localKnownFacts.push(newFact);
         }
+        console.log(
+          "ALL CONDITIONS MET. LOCALNEWFACTS AFTER PUSH",
+          localKnownFacts
+        );
+        return;
+      }
     };
 
-    // for the first goal, we need to find the rule that can infer the goal, and so unfulfilledConditions is set
+    // infer the current goal
     console.log("RULE OF GOAL", ruleOfGoal);
     infer(ruleOfGoal[0]);
 
@@ -234,9 +220,7 @@ const App = () => {
           parentGoal,
           ruleThatCanInfer,
           localKnownFacts,
-          setKnownFacts,
           rules,
-          visitedGoals,
           canReachGoal
         );
         console.log("RESULT OF RECURSION", newFacts);
@@ -247,14 +231,13 @@ const App = () => {
             console.log("NEWLY INFERRED FACTS AFTER INFER():", localKnownFacts);
             console.log("CHECKING PARENT GOAL WITH INFER");
             infer(parentGoal[0]);
-            console.log("VISITED GOALS AFTER POP", visitedGoals);
           }
         }
 
         // If there is no rule that can infer the unfulfilled condition, we can't reach the goal
       } else {
         canReachGoal = false;
-        return;
+        return localKnownFacts;
       }
     });
     return localKnownFacts;
@@ -294,8 +277,6 @@ const App = () => {
     "IF light nasal breathing THEN nasal discharge",
     "IF heavy nasal breathing THEN sinus membranes swelling",
     "IF low fever AND headache AND nasal discharge AND cough THEN cold",
-    "IF high fever AND headache AND nasal discharge AND cough THEN cold",
-
     "IF cold AND sore throat THEN treat",
     "IF cold AND not sore throat THEN don't treat",
     "IF treat THEN give medication",
@@ -303,20 +284,6 @@ const App = () => {
     "IF give medication AND antibiotics allergy THEN give Tylenol",
     "IF give medication AND not antibiotics allergy THEN give antibiotics",
   ];
-  const notify = () => {
-    if (databaseContent.length === 0) {
-      toast.error("No symptoms selected");
-      return;
-    }
-    if (selectedGoal === "") {
-      toast.error("No goal selected");
-      return;
-    }
-    databaseContent.includes(selectedGoal)
-      ? toast.success("Goal reached")
-      : toast.error("Goal not reached");
-  };
-
   return (
     <div className="glassmorphism flex gap-2 w-full h-screen">
       <div className="flex-1 gap-2 flex-col max-h-full">
@@ -332,9 +299,7 @@ const App = () => {
           selectedGoal={selectedGoal}
         />
       </div>
-      {showRules && (
-        <Rules rules={rules} currentlyInferringRule={currentlyInfferingRule} />
-      )}
+      {showRules && <Rules rules={rules} />}
 
       <div className="flex flex-1 flex-col gap-2 h-full">
         <div className="flex flex-col flex-1">
@@ -352,6 +317,7 @@ const App = () => {
           <Database
             databaseContent={databaseContent}
             inferredFacts={infferedFacts}
+            selectedGoal={selectedGoal}
           />
         </div>
 
@@ -379,7 +345,6 @@ const App = () => {
               className="bg-orange-400 rounded-lg px-4 py-2"
               onClick={() => {
                 forwardChain();
-                notify();
                 console.log("FC");
               }}
             >
@@ -398,12 +363,10 @@ const App = () => {
                       rule.split("THEN")[1].includes(selectedGoal)
                     ),
                     selectedFacts,
-                    setSelectedFacts,
                     rules
                   )
                 );
                 console.log("BC");
-                notify();
               }}
             >
               Start
