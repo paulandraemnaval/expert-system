@@ -25,7 +25,6 @@ const App = () => {
   const clearDatabase = () => {
     setDatabaseContent([]);
     setInfferedFacts([]);
-    setSelectedFacts([]);
   };
 
   const handleFactClick = (fact) => {
