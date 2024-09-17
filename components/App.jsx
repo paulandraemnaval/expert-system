@@ -47,65 +47,58 @@ const App = () => {
   };
 
   const forwardChain = async () => {
+    const addFact = (rule) => {
+      const newFact = rule.split("THEN")[1].trim();
+      if (!databaseContent.includes(newFact)) {
+        updatedDatabaseContent.push(newFact);
+        newRuleFired = true;
+        firedRules.push(rule);
+      }
+    };
+
     let newRuleFired = true;
     let firedRules = [];
     let updatedDatabaseContent = [...databaseContent];
-
+    let allConditionsTrue = true;
     while (newRuleFired && !updatedDatabaseContent.includes(selectedGoal)) {
       newRuleFired = false;
-
-      for (const rule of rules) {
-        const [conditionPart, result] = rule.split("THEN");
+      console.log("LOOPING");
+      for (let rule of rules) {
         if (
+          rule.includes("AND") &&
           !rule.includes("temperature") &&
-          conditionPart.includes(" AND ") &&
-          !firedRules.includes(rule.trim()) &&
-          !updatedDatabaseContent.includes(result.trim())
+          !firedRules.includes(rule)
         ) {
-          const conditions = conditionPart
-            .split("IF")[1]
-            .split(" AND ")
-            .map((condition) => condition.trim());
+          let conditions = rule.split("IF")[1].split("THEN")[0].split("AND");
+          allConditionsTrue = true;
 
-          let allConditionsTrue = true;
-
-          conditions.forEach((condition) => {
-            if (condition.startsWith("not")) {
+          for (let condition of conditions) {
+            console.log("CONDITION", condition);
+            if (condition.includes("not")) {
               if (
                 updatedDatabaseContent.includes(
                   condition.split("not")[1].trim()
                 )
               ) {
-                //a negated condition is present in the database, we can't reach the goal
                 allConditionsTrue = false;
-                return;
+                break;
               }
             } else if (!updatedDatabaseContent.includes(condition.trim())) {
               allConditionsTrue = false;
+              break;
             }
-          });
+          }
 
-          if (allConditionsTrue && !updatedDatabaseContent.includes(result)) {
-            firedRules.push(rule.trim());
-            updatedDatabaseContent.push(result.trim());
-            newRuleFired = updatedDatabaseContent.includes(selectedGoal)
-              ? false
-              : true;
-          }
+          if (allConditionsTrue) addFact(rule);
         } else {
-          for (const fact of updatedDatabaseContent) {
-            if (
-              rule.split("IF")[1].split("THEN")[0].trim() === fact.trim() &&
-              !firedRules.includes(rule.trim()) &&
-              !updatedDatabaseContent.includes(result.trim())
-            ) {
-              firedRules.push(rule.trim());
-              updatedDatabaseContent.push(result.trim());
-              newRuleFired = updatedDatabaseContent.includes(selectedGoal)
-                ? false
-                : true;
-            }
-          }
+          const condition = rule.split("IF")[1].split("THEN")[0].trim();
+          console.log("CONDITION", condition);
+          if (
+            condition.includes("not") &&
+            !updatedDatabaseContent.includes(condition.split("not")[1].trim())
+          )
+            addFact(rule);
+          if (updatedDatabaseContent.includes(condition)) addFact(rule);
         }
       }
     }
