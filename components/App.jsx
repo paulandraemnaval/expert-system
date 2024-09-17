@@ -304,21 +304,11 @@ const App = () => {
 
       <div className="flex flex-1 flex-col gap-2 h-full">
         <div className="flex flex-col flex-1">
-          <div className="flex mb-2">
-            <span className="text-lg font-bold font-inter text-bottom mr-2">
-              Database
-            </span>
-            <button
-              className="bg-blue-400 rounded-lg px-4 text-white font-bold"
-              onClick={clearDatabase}
-            >
-              Clear database
-            </button>
-          </div>
           <Database
             databaseContent={databaseContent}
             inferredFacts={infferedFacts}
             selectedGoal={selectedGoal}
+            clearDatabase={clearDatabase}
           />
         </div>
 
@@ -343,7 +333,7 @@ const App = () => {
           </div>
           {forwardChaining ? (
             <button
-              className="bg-orange-400 rounded-lg px-4 py-2"
+              className="bg-orange-400 rounded-lg px-4 py-2 text-white font-bold"
               onClick={() => {
                 forwardChain();
                 console.log("FC");
@@ -353,7 +343,7 @@ const App = () => {
             </button>
           ) : (
             <button
-              className="bg-orange-400 rounded-lg px-4 py-2"
+              className="bg-orange-400 rounded-lg px-4 py-2 text-white font-bold"
               onClick={() => {
                 setDatabaseContent(
                   backwardChain(
