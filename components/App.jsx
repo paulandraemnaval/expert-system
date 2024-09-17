@@ -101,11 +101,9 @@ const App = () => {
             ) {
               firedRules.push(rule.trim());
               updatedDatabaseContent.push(result.trim());
-              newRuleFired = true;
-
-              if (updatedDatabaseContent.includes(selectedGoal)) {
-                break;
-              }
+              newRuleFired = updatedDatabaseContent.includes(selectedGoal)
+                ? false
+                : true;
             }
           }
         }
