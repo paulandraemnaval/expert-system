@@ -16,7 +16,7 @@ const Database = ({
         <button
           className="bg-blue-400 rounded-lg px-4 text-white font-bold"
           onClick={() => {
-            clearDatabase;
+            clearDatabase();
             toast.success("Database Cleared!");
           }}
         >
