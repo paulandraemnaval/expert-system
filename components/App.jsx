@@ -4,6 +4,7 @@ import Rules from "./Rules";
 import GoalPicker from "./GoalPicker";
 import FactPicker from "./FactPicker";
 import Database from "./Database";
+import toast from "react-hot-toast";
 
 const App = () => {
   const [selectedFacts, setSelectedFacts] = React.useState([]);
@@ -337,6 +338,7 @@ const App = () => {
               onClick={() => {
                 forwardChain();
                 console.log("FC");
+                toast.success("Forward Chaining Completed!");
               }}
             >
               Start
@@ -358,6 +360,7 @@ const App = () => {
                   )
                 );
                 console.log("BC");
+                toast.success("Backward Chaining Completed!");
               }}
             >
               Start
