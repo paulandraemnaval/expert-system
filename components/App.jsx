@@ -57,15 +57,16 @@ const App = () => {
       for (const rule of rules) {
         const [conditionPart, result] = rule.split("THEN");
         if (
+          !rule.includes("temperature") &&
           conditionPart.includes(" AND ") &&
           !firedRules.includes(rule.trim()) &&
-          !updatedDatabaseContent.includes(result.trim()) &&
-          !rule.includes("temperature")
+          !updatedDatabaseContent.includes(result.trim())
         ) {
           const conditions = conditionPart
             .split("IF")[1]
             .split(" AND ")
             .map((condition) => condition.trim());
+
           let allConditionsTrue = true;
 
           conditions.forEach((condition) => {
@@ -87,11 +88,9 @@ const App = () => {
           if (allConditionsTrue && !updatedDatabaseContent.includes(result)) {
             firedRules.push(rule.trim());
             updatedDatabaseContent.push(result.trim());
-            newRuleFired = true;
-
-            if (updatedDatabaseContent.includes(selectedGoal)) {
-              break;
-            }
+            newRuleFired = updatedDatabaseContent.includes(selectedGoal)
+              ? false
+              : true;
           }
         } else {
           for (const fact of updatedDatabaseContent) {
